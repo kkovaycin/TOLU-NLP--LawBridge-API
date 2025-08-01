@@ -39,11 +39,11 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.commit()
     db.refresh(db_user)
     return db_user
-#
-# def authenticate_user(db: Session, email: str, password: str):
-#     user = db.query(User).filter(User.email == email).first()
-#     if not user:
-#         return None
-#     if not pwd_context.verify(password, user.password):
-#         return None
-#     return user
+
+def authenticate_user(db: Session, email: str, password: str):
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        return None
+    if not pwd_context.verify(password, user.password):
+        return None
+    return user
