@@ -2,14 +2,18 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, TIMESTAMP
 from database import Base
 from datetime import datetime
 
+
+# Kullanıcı modelimiz (users tablosu)
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "users"  # Veritabanı tablo adı
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(100), unique=True, nullable=False)
     email = Column(String(150), unique=True, nullable=False)
     password = Column(String(255), nullable=False)  # Şifreli kayıt için eklendi
 
+
+# Kullanıcı ayarlarını tutan model (settings tablosu)
 class Settings(Base):
     __tablename__ = "settings"
 
