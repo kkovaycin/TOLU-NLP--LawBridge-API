@@ -1,51 +1,138 @@
+from datetime import datetime
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import List, Optional, Dict, Any
+from pydantic.config import ConfigDict
 
 
-# Kullanıcıdan gelen tercih verileri için istek modeli
-# class PreferencesRequest(BaseModel):
-#     user_id: int
-#     platform: str
-#     mode: str
-#     frequency: Optional[str] = None
-#
-
-# API'den dönen tercih verileri için cevap modeli
+# Kullanıcı ayarları için models
 class PreferencesResponse(BaseModel):
     mode: str
     platform: str
     frequency: Optional[str] = None
 
 
-# Yeni kullanıcı kaydı için model.
-# Yeni kullanıcı oluşturulurken kullanılır (Register).
-# API'ye gelen POST /register verisini temsil eder.
+# Kullanıcı kaydı ve girişi için models
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
 
 
-# Kullanıcı girişi için model.
-# Giriş yaparken kullanılır (POST /login).
-# Kullanıcıdan sadece e-posta ve şifre alır.
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-# Token doğrulaması yapılmış kullanıcıyı temsil eden çıktı modeli.
-# JWT doğrulaması sonrası (örneğin /me endpoint'inde) kullanıcı bilgileri
-# frontend’e dönerken kullanılır.
+
 class UserOut(BaseModel):
     id: int
     username: str
     email: EmailStr
 
     class Config:
-        from_attributes = True  # Pydantic v2 uyumu için
+        from_attributes = True
 
 
-# Login sonrası dönen token yapısı
+# Token modeli
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
+    user_id: int
+    username: str
+    email: str
+
+
+# Yorum analizi için modeller
+class CommentAnalysisItem(BaseModel):
+    comment: str
+    labels_hukuk: Optional[List[str]] = None  # ['a', 's', 'd'] gibi
+    labels_duygu: Optional[List[str]] = None  # ['1', '2', '3'] gibi
+    labels_niyet: Optional[List[str]] = None  # ['6', '7', 'q'] gibi
+    temizlik: Optional[str] = None  # 'p', 'j', 'k'
+    law_score: Optional[float] = None  # 0.0 - 1.0
+
+
+# Yeni analiz oluşturma isteği
+class CreateAnalysisRequest(BaseModel):
+    analysis_name: str
+    platform: str
+    mode: str
+    frequency: Optional[str] = None
+    data: List[CommentAnalysisItem]
+
+
+# Content item modeli
+class ContentItemResponse(BaseModel):
+    id: int
+    platform: str
+    content_id: str
+    content_url: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Yorum modeli
+class CommentResponse(BaseModel):
+    id: int
+    text: str
+    timestamp: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Analiz sonucu modeli
+class AnalysisResultResponse(BaseModel):
+    id: int
+    comment_id: int
+    labels_hukuk: Optional[List[str]] = None
+    labels_duygu: Optional[List[str]] = None
+    labels_niyet: Optional[List[str]] = None
+    temizlik: Optional[str] = None
+    law_score: Optional[float] = None
+    has_dilekce: bool
+    created_at: datetime
+
+    # İlişkili yorum verisini de döndür
+    comment: CommentResponse
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Frontend dashboard için analiz özeti
+class AnalysisSummary(BaseModel):
+    id: int
+    name: str  # content_id'den türetilecek
+    date: str  # created_at'dan formatlanacak
+    platform: str
+    mode: Optional[str] = None
+    frequency: Optional[str] = None
+    total_comments: int
+    analyzed_comments: int
+
+
+# Dashboard ana response
+class DashboardResponse(BaseModel):
+    total_comments: int
+    analyzed_comments: int
+    duygu_distribution: Dict[str, int]
+    niyet_distribution: Dict[str, int]
+    hukuki_distribution: Dict[str, int]
+    analyses: List[AnalysisSummary]
+
+
+# Analiz detayı için response
+class AnalysisDetailResponse(BaseModel):
+    analysis_info: AnalysisSummary
+    comments: List[AnalysisResultResponse]
+    distribution: Dict[str, Dict[str, int]]
+
+
+# Dilekçe log modeli
+class DilekceLogResponse(BaseModel):
+    id: int
+    analysis_id: int
+    generated_text: str
+    pdf_url: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
